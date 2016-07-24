@@ -1,0 +1,9 @@
+[package]
+name = "rustweet"
+version = "0.1.0"
+authors = ["mayah"]
+repository = "https://github.com/mayah/rustweet"
+
+[dependencies]
+oauth-client = "0.1"
+rustc-serialize = "0.3"
