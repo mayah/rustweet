@@ -1,10 +1,14 @@
 extern crate oauth_client as oauth;
 extern crate rustc_serialize;
 
+mod error;
+
 use std::collections::HashMap;
 use oauth::Token;
 use rustc_serialize::json::{self, Json};
 use rustc_serialize::Decodable;
+
+pub use error::Error;
 
 const HOME_TIMELINE_URL: &'static str = "https://api.twitter.com/1.1/statuses/home_timeline.json";
 const SEARCH_TIMELINE_URL: &'static str = "https://api.twitter.com/1.1/search/tweets.json";
@@ -35,42 +39,31 @@ impl Client {
         }
     }
 
-    pub fn get_timeline(&self) -> Result<Vec<Tweet>, oauth::Error> {
+    pub fn get_timeline(&self) -> Result<Vec<Tweet>, Error> {
         let bytes = try!(oauth::get(HOME_TIMELINE_URL, &self.consumer_token, Some(&self.access_token), None));
-        let json_str = std::str::from_utf8(bytes.as_slice()).unwrap();
-
-        let js = Json::from_str(json_str).unwrap();
+        let json_str = try!(std::str::from_utf8(bytes.as_slice()));
+        let js = try!(Json::from_str(json_str));
         let mut decoder = json::Decoder::new(js);
-        let tweets = Decodable::decode(&mut decoder).unwrap();
+        let tweets = try!(Decodable::decode(&mut decoder));
 
         Ok(tweets)
     }
 
-    pub fn search(&self, query: &str) -> Result<Vec<Tweet>, oauth::Error> {
+    pub fn search(&self, query: &str) -> Result<Vec<Tweet>, Error> {
         let mut param = HashMap::new();
         param.insert("q".into(), query.into());
 
-        let bytes = match oauth::get(SEARCH_TIMELINE_URL, &self.consumer_token, Some(&self.access_token), Some(&param)) {
-            Ok(x) => x,
-            Err(oauth::Error::HttpStatus(resp)) => {
-                let s = std::str::from_utf8(resp.get_body()).unwrap();
-                println!("body={}", s);
+        let bytes = try!(oauth::get(SEARCH_TIMELINE_URL, &self.consumer_token, Some(&self.access_token), Some(&param)));
 
-                assert!(false);
-                Vec::new()
-            },
-            Err(x) => {
-                return Err(x)
-            }
+        let json_str: &str = try!(std::str::from_utf8(bytes.as_slice()));
+        let js: Json = try!(Json::from_str(json_str));
+        let statuses: Json = match js.find("statuses") {
+            Some(x) => x.clone(),
+            None => return Err(Error::Invalid("statuses not found"))
         };
-
-        let statuses = {
-            let json_str: &str = std::str::from_utf8(bytes.as_slice()).unwrap();
-            let js: Json = Json::from_str(json_str).unwrap();
-            js.find("statuses").unwrap().clone()
-        };
+        // let statuses = try!(js.find("statuses")).clone();
         let mut decoder = json::Decoder::new(statuses);
-        let tweets: Vec<Tweet> = Decodable::decode(&mut decoder).unwrap();
-        Ok(tweets)
+        let d = try!(Decodable::decode(&mut decoder));
+        Ok(d)
     }
 }
