@@ -5,33 +5,33 @@ use std::str;
 use rustc_serialize::json;
 
 pub enum Error {
-    Invalid(&'static str),  // Something invalid.
-    OAuth(oauth::Error),
-    Utf8(str::Utf8Error),
-    Parser(json::ParserError),
-    Decorder(json::DecoderError),
+    InvalidError(&'static str),  // Something invalid.
+    OAuthError(oauth::Error),
+    Utf8Error(str::Utf8Error),
+    ParserError(json::ParserError),
+    DecorderError(json::DecoderError),
 }
 
 impl From<oauth::Error> for Error {
     fn from(err: oauth::Error) -> Error {
-        Error::OAuth(err)
+        Error::OAuthError(err)
     }
 }
 
 impl From<str::Utf8Error> for Error {
     fn from(err: str::Utf8Error) -> Error {
-        Error::Utf8(err)
+        Error::Utf8Error(err)
     }
 }
 
 impl From<json::ParserError> for Error {
     fn from(err: json::ParserError) -> Error {
-        Error::Parser(err)
+        Error::ParserError(err)
     }
 }
 
 impl From<json::DecoderError> for Error {
     fn from(err: json::DecoderError) -> Error {
-        Error::Decorder(err)
+        Error::DecorderError(err)
     }
 }

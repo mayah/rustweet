@@ -59,7 +59,7 @@ impl Client {
         let js: Json = try!(Json::from_str(json_str));
         let statuses: Json = match js.find("statuses") {
             Some(x) => x.clone(),
-            None => return Err(Error::Invalid("statuses not found"))
+            None => return Err(Error::InvalidError("statuses not found"))
         };
         // let statuses = try!(js.find("statuses")).clone();
         let mut decoder = json::Decoder::new(statuses);
