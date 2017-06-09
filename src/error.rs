@@ -1,16 +1,14 @@
-extern crate oauth_client as oauth;
-extern crate rustc_serialize;
-
 use std::{error, fmt, str};
-use rustc_serialize::json;
+
+use oauth;
+use serde_json;
 
 #[derive(Debug)]
 pub enum Error {
     InvalidError(&'static str),  // Something invalid.
     OAuthError(oauth::Error),
     Utf8Error(str::Utf8Error),
-    ParserError(json::ParserError),
-    DecorderError(json::DecoderError),
+    JsonError(serde_json::Error),
 }
 
 impl fmt::Display for Error {
@@ -19,8 +17,7 @@ impl fmt::Display for Error {
             Error::InvalidError(ref err) => write!(f, "Invalid json error: {}", err),
             Error::OAuthError(ref err) => write!(f, "OAuth error: {}", err),
             Error::Utf8Error(ref err) => write!(f, "UTF8 conversion error: {}", err),
-            Error::ParserError(ref err) => write!(f, "JSON parse error: {}", err),
-            Error::DecorderError(ref err) => write!(f, "JSON decoding error: {}", err),
+            Error::JsonError(ref err) => write!(f, "JSON error: {}", err),
         }
     }
 }
@@ -31,8 +28,7 @@ impl error::Error for Error {
             Error::InvalidError(ref err) => err,
             Error::OAuthError(ref err) => err.description(),
             Error::Utf8Error(ref err) => err.description(),
-            Error::ParserError(ref err) => err.description(),
-            Error::DecorderError(ref err) => err.description(),
+            Error::JsonError(ref err) => err.description(),
         }
     }
 }
@@ -49,14 +45,8 @@ impl From<str::Utf8Error> for Error {
     }
 }
 
-impl From<json::ParserError> for Error {
-    fn from(err: json::ParserError) -> Error {
-        Error::ParserError(err)
-    }
-}
-
-impl From<json::DecoderError> for Error {
-    fn from(err: json::DecoderError) -> Error {
-        Error::DecorderError(err)
+impl From<serde_json::Error> for Error {
+    fn from(err: serde_json::Error) -> Error {
+        Error::JsonError(err)
     }
 }
