@@ -31,6 +31,11 @@ pub struct Tweet {
     pub user: User,
 }
 
+#[derive(Clone, Debug, Deserialize)]
+pub struct SearchResult {
+    pub statuses: Vec<Tweet>,
+}
+
 impl Client {
     pub fn new(consumer_key: &str, consumer_secret: &str, access_key: &str, access_secret: &str) -> Client {
         Client {
@@ -46,13 +51,14 @@ impl Client {
         Ok(tweets)
     }
 
-    pub fn search(&self, query: &str) -> Result<Vec<Tweet>, Error> {
+    pub fn search(&self, query: &str) -> Result<SearchResult, Error> {
         let mut param = HashMap::new();
         param.insert("q".into(), query.into());
 
         let bytes = oauth::get(SEARCH_TIMELINE_URL, &self.consumer_token, Some(&self.access_token), Some(&param))?;
         let json_str: &str = std::str::from_utf8(bytes.as_slice())?;
-        let tweets: Vec<Tweet> = serde_json::from_str(json_str)?;
-        Ok(tweets)
+
+        let result: SearchResult = serde_json::from_str(json_str)?;
+        Ok(result)
     }
 }
